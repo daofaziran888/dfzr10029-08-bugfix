@@ -83,6 +83,15 @@ def create_entry(payload: dict[str, object]) -> ActionResult:
     return ActionResult(ok=True, message="查询模板已登记", entry=entry)
 
 
+@router.post("/{entry_id}/validate", response_model=ActionResult)
+def validate_entry(entry_id: int) -> ActionResult:
+    """校验查询模板：读取数据集当前可用版本的 schema，不完整时给出明确失败原因。"""
+    result, message, ok = service.validate_template(entry_id)
+    if not ok:
+        return ActionResult(ok=False, message=message)
+    return ActionResult(ok=True, message=message, entry=result)
+
+
 @router.post("/{entry_id}/actions", response_model=ActionResult)
 def run_action(entry_id: int, payload: ActionPayload) -> ActionResult:
     """对单条查询模板执行保存模板、发布模板、停用模板；不允许的动作会被拦下并说明原因。"""

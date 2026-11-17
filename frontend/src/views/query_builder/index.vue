@@ -48,6 +48,7 @@
             >
               {{ action }}
             </button>
+            <button class="link" type="button" :data-testid="`validate-${row.id}`" @click="validateTemplate(row)">校验模板</button>
           </td>
         </tr>
         <tr v-if="!rows.length">
@@ -74,6 +75,7 @@
 
     <footer class="page-foot">
       <span>共 {{ total }} 条OLAP查询记录</span>
+      <span v-if="validateMessage" data-testid="validate-message">{{ validateMessage }}</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
   </section>
@@ -95,6 +97,7 @@ const metricNames = ["已发布模板", "草稿模板", "停用模板"]
 const rows = ref<Row[]>([])
 const total = ref(0)
 const errorMessage = ref('')
+const validateMessage = ref('')
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
 const showCreate = ref(false)
@@ -165,6 +168,22 @@ async function runAction(action: string, row: Row) {
     await reload()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'OLAP查询操作失败'
+  }
+}
+
+async function validateTemplate(row: Row) {
+  errorMessage.value = ''
+  validateMessage.value = ''
+  try {
+    const response = await request(`${ENDPOINT}/${row.id}/validate`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+    const payload = await response.json()
+    if (!response.ok || !payload.ok) throw new Error(payload.message || '模板校验失败')
+    validateMessage.value = payload.message
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '模板校验失败'
   }
 }
 
